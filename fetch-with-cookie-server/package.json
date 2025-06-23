@@ -1,0 +1,13 @@
+{
+  "name": "fetch-with-cookie",
+  "version": "1.0.0",
+  "description": "MCP Server for fetching web pages with cookies",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

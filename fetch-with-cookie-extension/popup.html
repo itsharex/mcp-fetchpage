@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 250px;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .domain {
+            background: #f0f0f0;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .success {
+            color: #4CAF50;
+        }
+        
+        .error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="domain" id="currentDomain">Loading...</div>
+    <button id="exportBtn">Save Cookies</button>
+    <div class="status" id="status"></div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

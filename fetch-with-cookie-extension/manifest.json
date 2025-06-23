@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Fetch With Cookie",
+  "version": "1.0",
+  "description": "Fetch web pages with cookies for MCP tools",
+  "permissions": [
+    "cookies",
+    "activeTab",
+    "downloads"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Fetch With Cookie"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
