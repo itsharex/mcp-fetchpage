@@ -46,47 +46,94 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             console.log('Getting cookies for domain:', currentDomain);
             
-            // Try to get cookies for current domain
-            let cookies = await chrome.cookies.getAll({ domain: currentDomain });
-            console.log('Direct domain match result:', cookies.length);
+            // 总是收集所有相关域名的cookies
+            const allCookies = await chrome.cookies.getAll({});
             
-            // If not found, try without www prefix
-            if (cookies.length === 0 && currentDomain.startsWith('www.')) {
-                const rootDomain = currentDomain.substring(4);
-                cookies = await chrome.cookies.getAll({ domain: rootDomain });
-                console.log('Without www result:', cookies.length);
-            }
+            // 提取主域名 (例如: wx.zsxq.com -> zsxq.com)
+            const domainParts = currentDomain.split('.');
+            const mainDomain = domainParts.slice(-2).join('.'); // 取最后两部分
             
-            // If still not found, try with www prefix
-            if (cookies.length === 0 && !currentDomain.startsWith('www.')) {
-                const wwwDomain = 'www.' + currentDomain;
-                const wwwCookies = await chrome.cookies.getAll({ domain: wwwDomain });
-                cookies = cookies.concat(wwwCookies);
-                console.log('With www result:', wwwCookies.length);
-            }
+            console.log('Main domain extracted:', mainDomain);
             
-            // If still not found, try all related cookies (including subdomains)
-            if (cookies.length === 0) {
-                const allCookies = await chrome.cookies.getAll({});
-                cookies = allCookies.filter(cookie => {
-                    return cookie.domain === currentDomain || 
-                           cookie.domain === '.' + currentDomain ||
-                           cookie.domain.endsWith('.' + currentDomain) ||
-                           currentDomain.endsWith(cookie.domain.replace(/^\./, ''));
+            // 查找所有相关的cookies
+            const cookies = allCookies.filter(cookie => {
+                const cookieDomain = cookie.domain.replace(/^\./, ''); // 去掉开头的点
+                
+                return (
+                    // 精确匹配当前域名
+                    cookie.domain === currentDomain ||
+                    cookie.domain === '.' + currentDomain ||
+                    
+                    // 匹配主域名
+                    cookie.domain === mainDomain ||
+                    cookie.domain === '.' + mainDomain ||
+                    
+                    // 匹配www变体
+                    cookie.domain === 'www.' + mainDomain ||
+                    cookie.domain === '.' + 'www.' + mainDomain ||
+                    
+                    // 当前域名是子域，匹配父域的cookies
+                    currentDomain.endsWith('.' + cookieDomain) ||
+                    
+                    // cookie域名是子域，当前页面是父域
+                    cookieDomain.endsWith('.' + currentDomain) ||
+                    cookieDomain.endsWith('.' + mainDomain)
+                );
+            });
+            
+            console.log('Total cookies found:', cookies.length);
+            
+            // 按域名分组显示找到的cookies
+            const cookiesByDomain = {};
+            cookies.forEach(cookie => {
+                const domain = cookie.domain;
+                if (!cookiesByDomain[domain]) {
+                    cookiesByDomain[domain] = 0;
+                }
+                cookiesByDomain[domain]++;
+            });
+            
+            console.log('Cookies by domain:', cookiesByDomain);
+            
+            // 获取localStorage数据
+            console.log('Getting localStorage data...');
+            let localStorage = {};
+            try {
+                // 注入脚本到当前页面获取localStorage
+                const [result] = await chrome.scripting.executeScript({
+                    target: { tabId: (await chrome.tabs.query({ active: true, currentWindow: true }))[0].id },
+                    func: () => {
+                        const storage = {};
+                        try {
+                            for (let i = 0; i < window.localStorage.length; i++) {
+                                const key = window.localStorage.key(i);
+                                const value = window.localStorage.getItem(key);
+                                storage[key] = value;
+                            }
+                        } catch (e) {
+                            console.error('Cannot access localStorage:', e);
+                        }
+                        return storage;
+                    }
                 });
-                console.log('Filtered related cookies result:', cookies.length);
+                localStorage = result.result || {};
+                console.log('localStorage retrieved:', Object.keys(localStorage).length, 'items');
+            } catch (error) {
+                console.warn('Failed to get localStorage:', error.message);
+                localStorage = {};
+            }
+
+            if (cookies.length === 0 && Object.keys(localStorage).length === 0) {
+                throw new Error('No cookies or localStorage found');
             }
             
-            if (cookies.length === 0) {
-                throw new Error('No cookies found');
-            }
-            
-            // Prepare cookie data
+            // Prepare cookie data (now includes localStorage)
             const cookieData = {
                 domain: currentDomain,
                 url: currentUrl,
                 timestamp: new Date().toISOString(),
                 totalCookies: cookies.length,
+                totalLocalStorage: Object.keys(localStorage).length,
                 cookies: cookies.map(cookie => ({
                     name: cookie.name,
                     value: cookie.value,
@@ -96,7 +143,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     httpOnly: cookie.httpOnly,
                     sameSite: cookie.sameSite,
                     expirationDate: cookie.expirationDate
-                }))
+                })),
+                localStorage: localStorage
             };
             
             // Create JSON content
@@ -114,7 +162,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
             
-            status.textContent = `Successfully saved ${cookies.length} cookies to fetch-with-cookie/cookies/`;
+            const domainCount = Object.keys(cookiesByDomain).length;
+            const domainList = Object.keys(cookiesByDomain).join(', ');
+            const localStorageCount = Object.keys(localStorage).length;
+            
+            status.textContent = `Successfully saved ${cookies.length} cookies and ${localStorageCount} localStorage items from ${domainCount} domain(s): ${domainList}`;
             status.className = 'status success';
             
         } catch (error) {

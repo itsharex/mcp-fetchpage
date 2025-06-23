@@ -1,0 +1,6 @@
+# Dependencies
+node_modules/
+
+# CLAUDE file
+CLAUDE.md
+.DS_Store
