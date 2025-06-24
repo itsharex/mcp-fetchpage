@@ -1,7 +1,7 @@
 {
-  "name": "fetch-with-cookie",
-  "version": "1.0.0",
-  "description": "MCP Server for fetching web pages with cookies",
+  "name": "mcp-fetchpage",
+  "version": "2.0.0",
+  "description": "MCP Server for intelligent web page fetching with automatic cookie support",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "puppeteer": "^22.8.2"
+    "puppeteer": "^24.10.2"
   }
 }
