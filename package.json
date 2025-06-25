@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kaiye/mcp-fetchpage.git"
+    "url": "git+https://github.com/kaiye/mcp-fetchpage.git"
   },
   "homepage": "https://github.com/kaiye/mcp-fetchpage#readme",
   "bugs": {
@@ -27,7 +27,7 @@
   "license": "MIT",
   "files": [
     "mcp-server/server.js",
-    "mcp-server/debug.js", 
+    "mcp-server/debug.js",
     "mcp-server/domain-selectors.json",
     "chrome-extension/",
     "README.md",
