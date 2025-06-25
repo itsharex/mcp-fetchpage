@@ -12,7 +12,6 @@
  *   test-page <url> [options]     - Test unified fetchpage method
  *   test-http <url>               - Force HTTP method only
  *   test-spa <url> [selector]     - Force SPA method only
- *   inspect-spa <url> [selector]  - Debug SPA with visible browser
  *   list-cookies [domain]         - List available cookie files
  *   show-cookie <domain>          - Show cookie file content
  * 
@@ -21,7 +20,6 @@
  *   node debug.js test-page "https://example.com" --force-method=spa
  *   node debug.js test-http "https://example.com"
  *   node debug.js test-spa "https://spa.example.com" "#content"
- *   node debug.js inspect-spa "https://example.com"
  *   node debug.js list-cookies
  *   node debug.js show-cookie "example.com"
  */
@@ -339,210 +337,6 @@ async function testSpa(url, waitFor) {
 }
 
 
-async function inspectSpa(url, waitFor) {
-  console.log(`🔍 检查SPA页面（浏览器窗口保持打开）: ${url}`);
-  
-  // 直接使用Puppeteer而不是通过MCP调用，这样可以控制关闭时机
-  const puppeteer = await import('puppeteer');
-  let browser = null;
-  
-  try {
-    console.log('🌟 启动检查模式（浏览器窗口将保持打开）...');
-    console.log('💡 提示：你可以在浏览器中手动操作页面');
-    console.log('🛑 完成检查后，请按 Enter 键关闭浏览器');
-    console.log('─'.repeat(50));
-    
-    // 启动浏览器（使用与server.js相同的最完整参数）
-    browser = await puppeteer.default.launch({
-      headless: false,
-      defaultViewport: null,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-sync',
-        '--disable-translate',
-        '--disable-default-apps',
-        '--no-first-run',
-        '--no-default-browser-check',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security'
-        // 注意：不添加 --no-zygote 和 --single-process，因为这是可视化模式
-      ]
-    });
-    
-    const page = await browser.newPage();
-    
-    // 设置用户代理
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    
-    // 解析域名并加载cookies
-    const urlObj = new URL(url);
-    const domain = urlObj.hostname;
-    console.log(`📋 目标域名: ${domain}`);
-    
-    // 查找并加载cookies
-    const cookieManager = new SimpleCookieManager();
-    const cookieFile = cookieManager.findCookieFile(domain);
-    let cookieData = null; // 在外部定义变量
-    
-    if (cookieFile) {
-      console.log(`🍪 找到Cookie文件: ${path.basename(cookieFile)}`);
-      cookieData = cookieManager.loadCookiesFromFile(cookieFile);
-      
-      if (cookieData) {
-        console.log(`📦 加载Cookie数据: ${cookieData.cookies?.length || 0} 个cookies, ${Object.keys(cookieData.localStorage || {}).length} 个localStorage项`);
-        
-        // 使用正确的browser.setCookie API（page.setCookie已弃用）
-        console.log('🔧 使用BrowserContext.setCookie设置cookies (Puppeteer 24)...');
-        
-        let successCount = 0;
-        let failCount = 0;
-        
-        // 准备cookies数组
-        const cookiesToSet = cookieData.cookies.map(cookie => ({
-          name: cookie.name,
-          value: cookie.value,
-          domain: cookie.domain,
-          path: cookie.path || '/',
-          secure: cookie.secure || false,
-          httpOnly: cookie.httpOnly || false,
-          sameSite: cookie.sameSite || 'Lax',
-          ...(cookie.expirationDate && { expires: cookie.expirationDate })
-        }));
-        
-        // 使用BrowserContext.setCookie一次性设置所有cookies (Puppeteer 24正确方法)
-        const context = page.browserContext();
-        await context.setCookie(...cookiesToSet);
-        successCount = cookiesToSet.length;
-        console.log(`✅ 使用BrowserContext.setCookie成功设置 ${successCount} 个cookies`);
-        
-        // 详细显示设置的cookies
-        cookiesToSet.forEach(cookie => {
-          console.log(`  - ${cookie.name} (${cookie.domain}${cookie.path})`);
-        });
-        
-        console.log(`📊 Cookie设置完成: 成功 ${successCount}/${cookieData.cookies.length} 个, 失败 ${failCount} 个`);
-      } else {
-        console.log('❌ 无法读取cookie文件');
-      }
-    } else {
-      console.log(`⚠️  没有找到域名 ${domain} 的cookie文件`);
-    }
-    
-    // 在导航之前设置localStorage（如果有的话）
-    if (cookieData && cookieData.localStorage && Object.keys(cookieData.localStorage).length > 0) {
-      console.log('📦 预设 localStorage...');
-      await page.evaluateOnNewDocument((localStorageData) => {
-        for (const [key, value] of Object.entries(localStorageData)) {
-          try {
-            window.localStorage.setItem(key, value);
-            console.log(`✅ 预设 localStorage: ${key}`);
-          } catch (error) {
-            console.error(`❌ 预设 localStorage失败 ${key}:`, error.message);
-          }
-        }
-      }, cookieData.localStorage);
-      console.log(`✅ 已预设 ${Object.keys(cookieData.localStorage).length} 个localStorage项`);
-    }
-    
-    console.log(`🌐 导航到目标页面: ${url}`);
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
-    
-    if (waitFor) {
-      console.log(`⏳ 等待元素: ${waitFor}`);
-      try {
-        await page.waitForSelector(waitFor, { timeout: 10000 });
-        console.log(`✅ 找到元素: ${waitFor}`);
-      } catch (error) {
-        console.log(`⚠️  元素未找到: ${waitFor}`);
-      }
-    }
-    // localStorage已经在页面刚加载时设置完成
-    
-    // 验证cookies和localStorage是否正确加载
-    console.log('🔍 验证数据加载状态...');
-    
-    const currentCookies = await page.cookies();
-    console.log(`🍪 当前页面cookies数量: ${currentCookies.length}`);
-    
-    // 详细显示当前cookies
-    console.log('📋 当前页面cookies详情:');
-    currentCookies.forEach(cookie => {
-      console.log(`  - ${cookie.name} = ${cookie.value.substring(0, 20)}... (${cookie.domain}${cookie.path})`);
-    });
-    
-    // 对比原始cookies，找出丢失的
-    if (cookieData && cookieData.cookies) {
-      const missingCookies = cookieData.cookies.filter(originalCookie => 
-        !currentCookies.some(currentCookie => 
-          currentCookie.name === originalCookie.name && 
-          currentCookie.domain === originalCookie.domain
-        )
-      );
-      
-      if (missingCookies.length > 0) {
-        console.log('⚠️  丢失的cookies:');
-        missingCookies.forEach(cookie => {
-          console.log(`  ❌ ${cookie.name} (${cookie.domain}${cookie.path || '/'})`);
-        });
-      }
-    }
-    
-    const localStorageInfo = await page.evaluate(() => {
-      try {
-        const storage = {};
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const key = window.localStorage.key(i);
-          storage[key] = window.localStorage.getItem(key);
-        }
-        return {
-          count: Object.keys(storage).length,
-          keys: Object.keys(storage).slice(0, 5) // 只显示前5个key
-        };
-      } catch (error) {
-        return { count: 0, keys: [], error: error.message };
-      }
-    });
-    
-    console.log(`📦 当前localStorage项目数: ${localStorageInfo.count}`);
-    if (localStorageInfo.keys.length > 0) {
-      console.log(`🔑 localStorage keys预览: ${localStorageInfo.keys.join(', ')}${localStorageInfo.count > 5 ? '...' : ''}`);
-    }
-    
-    console.log('─'.repeat(50));
-    console.log('🎯 浏览器已就绪，你可以开始检查页面');
-    console.log('📋 页面标题:', await page.title());
-    console.log('🔗 当前URL:', page.url());
-    console.log('💡 提示：你可以打开开发者工具(F12)查看Application标签下的Cookies和Local Storage');
-    
-    // 等待用户按Enter
-    const readline = await import('readline');
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-    
-    await new Promise((resolve) => {
-      rl.question('\n👆 按 Enter 键关闭浏览器并退出检查模式...', () => {
-        rl.close();
-        resolve();
-      });
-    });
-    
-  } catch (error) {
-    console.error('❌ 检查过程出错:', error.message);
-  } finally {
-    if (browser) {
-      await browser.close();
-      console.log('🔚 浏览器已关闭');
-    }
-  }
-}
 
 function listCookies(filterDomain) {
   console.log('🍪 可用的Cookie文件:');
@@ -635,7 +429,6 @@ function showHelp() {
   test-page <url> [options]     测试智能页面抓取（推荐）
   test-http <url>               强制使用HTTP方法
   test-spa <url> [selector]     强制使用SPA方法（通过MCP调用）
-  inspect-spa <url> [selector]  检查SPA页面（浏览器窗口保持打开）
   list-cookies [domain]         列出可用的Cookie文件
   show-cookie <domain>          显示指定域名的Cookie详情
   help                          显示此帮助信息
@@ -652,7 +445,6 @@ function showHelp() {
   node debug.js test-page "https://example.com" --headless=false
   node debug.js test-http "https://example.com"
   node debug.js test-spa "https://app.example.com" "#main-content"
-  node debug.js inspect-spa "https://app.example.com" "#main-content"
   node debug.js list-cookies
   node debug.js show-cookie "example.com"
 
@@ -721,14 +513,6 @@ async function main() {
           return;
         }
         await testSpa(args[1], args[2]);
-        break;
-        
-      case 'inspect-spa':
-        if (!args[1]) {
-          console.log('❌ 请提供URL参数');
-          return;
-        }
-        await inspectSpa(args[1], args[2]);
         break;
         
       case 'list-cookies':

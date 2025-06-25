@@ -19,7 +19,8 @@ const PAGES_DIR = path.join(os.homedir(), 'Downloads', 'mcp-fetchpage', 'pages')
 // 加载域名选择器配置
 let domainSelectors = {};
 try {
-  const configPath = path.join(path.dirname(import.meta.url.replace('file://', '')), 'domain-selectors.json');
+  const currentDir = path.dirname(import.meta.url.replace('file://', ''));
+  const configPath = path.join(currentDir, 'domain-selectors.json');
   const configContent = fs.readFileSync(configPath, 'utf8');
   domainSelectors = JSON.parse(configContent);
 } catch (error) {

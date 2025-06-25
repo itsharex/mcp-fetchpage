@@ -1,0 +1,40 @@
+{
+  "name": "mcp-fetchpage",
+  "version": "2.0.0",
+  "description": "MCP Server for intelligent web page fetching with automatic cookie support",
+  "main": "mcp-server/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node mcp-server/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaiye/mcp-fetchpage.git"
+  },
+  "homepage": "https://github.com/kaiye/mcp-fetchpage#readme",
+  "bugs": {
+    "url": "https://github.com/kaiye/mcp-fetchpage/issues"
+  },
+  "keywords": [
+    "mcp",
+    "web-scraping",
+    "cookies",
+    "puppeteer",
+    "claude",
+    "cursor"
+  ],
+  "author": "kaiye",
+  "license": "MIT",
+  "files": [
+    "mcp-server/server.js",
+    "mcp-server/debug.js", 
+    "mcp-server/domain-selectors.json",
+    "chrome-extension/",
+    "README.md",
+    "README-zh.md"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "puppeteer": "^24.10.2"
+  }
+}

@@ -19,38 +19,60 @@ Intelligent web page fetching with automatic cookie support and CSS selector ext
 
 ## Setup
 
-### 1. Install Chrome Extension
+### 1. Install MCP Server
 
+**Option A: Install from npm (Recommended)**
+```bash
+npm install -g mcp-fetchpage
+```
+
+**Option B: Install from source**
+```bash
+cd ~/Downloads/mcp-fetchpage
+npm install
+```
+
+### 2. Install Chrome Extension
+
+**If you installed from npm:**
+1. Go to `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select `/usr/local/lib/node_modules/mcp-fetchpage/chrome-extension`
+
+**If you installed from source:**
 1. Go to `chrome://extensions/`
 2. Enable "Developer mode"
 3. Click "Load unpacked"
 4. Select `~/Downloads/mcp-fetchpage/chrome-extension`
 
-### 2. Install MCP Server
-
-```bash
-cd ~/Downloads/mcp-fetchpage/mcp-server
-npm install
-```
-
 ### 3. Configure Editor
 
 **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
-⚠️ **Important**: Replace `/Users/YOUR_USERNAME` with your actual username!
-
+**If installed globally via npm:**
 ```json
 {
   "mcpServers": {
     "mcp-fetchpage": {
       "command": "node",
-      "args": ["/Users/YOUR_USERNAME/Downloads/mcp-fetchpage/mcp-server/server.js"]
+      "args": ["/usr/local/lib/node_modules/mcp-fetchpage/mcp-server/server.js"]
     }
   }
 }
 ```
 
-**Get your username**: Run `echo $HOME` in terminal to see your full path.
+**If installed locally or from source:**
+```json
+{
+  "mcpServers": {
+    "mcp-fetchpage": {
+      "command": "node",
+      "args": ["/path/to/mcp-fetchpage/mcp-server/server.js"]
+    }
+  }
+}
+```
 
 **Cursor** (Settings > Cursor Settings > Tools & Integrations > MCP Tools):
 ```json
@@ -58,7 +80,7 @@ npm install
   "mcpServers": {
     "mcp-fetchpage": {
       "command": "node",
-      "args": ["~/Downloads/mcp-fetchpage/mcp-server/server.js"]
+      "args": ["node_modules/mcp-fetchpage/mcp-server/server.js"]
     }
   }
 }
@@ -104,7 +126,7 @@ The system automatically uses optimized selectors for:
 # Standalone debug script (recommended for development)
 cd mcp-server
 node debug.js test-page "https://example.com"
-node debug.js inspect-spa "https://example.com" "#content"
+node debug.js test-spa "https://example.com" "#content"
 
 # MCP Inspector (for integration testing)
 npx @modelcontextprotocol/inspector
@@ -123,16 +145,22 @@ npx @modelcontextprotocol/inspector
 ## File Structure
 
 ```
-~/Downloads/mcp-fetchpage/
-├── README.md                   # This file
-├── README-zh.md               # Chinese version  
-├── chrome-extension/          # Chrome extension
-├── mcp-server/               # MCP server
-│   ├── server.js            # Main server
-│   ├── domain-selectors.json # Domain selector config
-│   └── package.json
-├── pages/                    # Saved pages
-└── cookies/                  # Saved cookies
+mcp-fetchpage/
+├── package.json              # npm package config
+├── package-lock.json         # npm lockfile
+├── node_modules/             # npm dependencies
+├── README.md                 # This file
+├── README-zh.md              # Chinese version  
+├── CLAUDE.md                 # Claude Code usage guide
+├── chrome-extension/         # Chrome extension
+│   ├── manifest.json
+│   ├── popup.js
+│   ├── popup.html
+│   └── background.js
+└── mcp-server/              # MCP server
+    ├── server.js            # Main server
+    ├── debug.js             # Debug tools
+    └── domain-selectors.json # Domain selector config
 ```
 
 ## Troubleshooting

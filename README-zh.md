@@ -19,38 +19,60 @@
 
 ## 安装配置
 
-### 1. 安装Chrome扩展
+### 1. 安装MCP服务器
 
+**方案A: 通过npm安装（推荐）**
+```bash
+npm install -g mcp-fetchpage
+```
+
+**方案B: 从源码安装**
+```bash
+cd ~/Downloads/mcp-fetchpage
+npm install
+```
+
+### 2. 安装Chrome扩展
+
+**如果通过npm安装:**
+1. 打开 `chrome://extensions/`
+2. 开启"开发者模式"
+3. 点击"加载已解压的扩展程序"
+4. 选择 `/usr/local/lib/node_modules/mcp-fetchpage/chrome-extension`
+
+**如果从源码安装:**
 1. 打开 `chrome://extensions/`
 2. 开启"开发者模式"
 3. 点击"加载已解压的扩展程序"
 4. 选择 `~/Downloads/mcp-fetchpage/chrome-extension`
 
-### 2. 安装MCP服务器
-
-```bash
-cd ~/Downloads/mcp-fetchpage/mcp-server
-npm install
-```
-
 ### 3. 配置编辑器
 
 **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
-⚠️ **重要**: 将 `/Users/YOUR_USERNAME` 替换为你的实际用户名！
-
+**如果通过npm全局安装:**
 ```json
 {
   "mcpServers": {
     "mcp-fetchpage": {
       "command": "node",
-      "args": ["/Users/YOUR_USERNAME/Downloads/mcp-fetchpage/mcp-server/server.js"]
+      "args": ["/usr/local/lib/node_modules/mcp-fetchpage/mcp-server/server.js"]
     }
   }
 }
 ```
 
-**获取用户名**: 在终端运行 `echo $HOME` 查看完整路径。
+**如果本地安装或从源码安装:**
+```json
+{
+  "mcpServers": {
+    "mcp-fetchpage": {
+      "command": "node",
+      "args": ["/path/to/mcp-fetchpage/mcp-server/server.js"]
+    }
+  }
+}
+```
 
 **Cursor** (Settings > Cursor Settings > Tools & Integrations > MCP Tools):
 ```json
@@ -58,7 +80,7 @@ npm install
   "mcpServers": {
     "mcp-fetchpage": {
       "command": "node",
-      "args": ["~/Downloads/mcp-fetchpage/mcp-server/server.js"]
+      "args": ["node_modules/mcp-fetchpage/mcp-server/server.js"]
     }
   }
 }
@@ -104,7 +126,7 @@ fetchpage(url="https://mp.weixin.qq.com/s/xxxxx")
 # 独立调试脚本（推荐用于开发调试）
 cd mcp-server
 node debug.js test-page "https://example.com"
-node debug.js inspect-spa "https://example.com" "#content"
+node debug.js test-spa "https://example.com" "#content"
 
 # MCP Inspector（用于集成测试）
 npx @modelcontextprotocol/inspector
@@ -123,16 +145,22 @@ npx @modelcontextprotocol/inspector
 ## 文件结构
 
 ```
-~/Downloads/mcp-fetchpage/
-├── README.md                   # 英文说明
-├── README-zh.md               # 中文说明（本文件）
-├── chrome-extension/          # Chrome扩展
-├── mcp-server/               # MCP服务器
-│   ├── server.js            # 主服务器
-│   ├── domain-selectors.json # 域名选择器配置
-│   └── package.json
-├── pages/                    # 保存的pages
-└── cookies/                  # 保存的cookies
+mcp-fetchpage/
+├── package.json              # npm包配置
+├── package-lock.json         # npm锁定文件
+├── node_modules/             # npm依赖
+├── README.md                 # 英文说明
+├── README-zh.md              # 中文说明（本文件）
+├── CLAUDE.md                 # Claude Code使用指南
+├── chrome-extension/         # Chrome扩展
+│   ├── manifest.json
+│   ├── popup.js
+│   ├── popup.html
+│   └── background.js
+└── mcp-server/              # MCP服务器
+    ├── server.js            # 主服务器
+    ├── debug.js             # 调试工具
+    └── domain-selectors.json # 域名选择器配置
 ```
 
 ## 常见问题
