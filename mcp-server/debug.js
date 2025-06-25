@@ -31,7 +31,7 @@ import path from 'path';
 import os from 'os';
 
 // 使用与server.js相同的cookie目录
-const COOKIE_DIR = path.join(os.homedir(), 'Downloads', 'fetch-with-cookie', 'cookies');
+const COOKIE_DIR = path.join(os.homedir(), 'Downloads', 'mcp-fetchpage', 'cookies');
 
 // 模拟MCP工具调用的函数
 async function simulateMCPCall(toolName, args) {

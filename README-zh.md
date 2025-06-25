@@ -24,12 +24,12 @@
 1. 打开 `chrome://extensions/`
 2. 开启"开发者模式"
 3. 点击"加载已解压的扩展程序"
-4. 选择 `~/Downloads/fetch-with-cookie/chrome-extension`
+4. 选择 `~/Downloads/mcp-fetchpage/chrome-extension`
 
 ### 2. 安装MCP服务器
 
 ```bash
-cd ~/Downloads/fetch-with-cookie/mcp-server
+cd ~/Downloads/mcp-fetchpage/mcp-server
 npm install
 ```
 
@@ -44,7 +44,7 @@ npm install
   "mcpServers": {
     "mcp-fetchpage": {
       "command": "node",
-      "args": ["/Users/YOUR_USERNAME/Downloads/fetch-with-cookie/mcp-server/server.js"]
+      "args": ["/Users/YOUR_USERNAME/Downloads/mcp-fetchpage/mcp-server/server.js"]
     }
   }
 }
@@ -58,7 +58,7 @@ npm install
   "mcpServers": {
     "mcp-fetchpage": {
       "command": "node",
-      "args": ["~/Downloads/fetch-with-cookie/mcp-server/server.js"]
+      "args": ["~/Downloads/mcp-fetchpage/mcp-server/server.js"]
     }
   }
 }
@@ -70,7 +70,7 @@ npm install
 
 ### 基础用法
 1. **登录**网站（在Chrome中）
-2. **点击**"Fetch With Cookie"扩展图标
+2. **点击**"Fetch Page MCP Tools"扩展图标
 3. **点击**"Save Cookies"按钮
 4. **在Claude/Cursor中使用**: `fetchpage(url="https://example.com")`
 
@@ -123,7 +123,7 @@ npx @modelcontextprotocol/inspector
 ## 文件结构
 
 ```
-~/Downloads/fetch-with-cookie/
+~/Downloads/mcp-fetchpage/
 ├── README.md                   # 英文说明
 ├── README-zh.md               # 中文说明（本文件）
 ├── chrome-extension/          # Chrome扩展
@@ -131,6 +131,7 @@ npx @modelcontextprotocol/inspector
 │   ├── server.js            # 主服务器
 │   ├── domain-selectors.json # 域名选择器配置
 │   └── package.json
+├── pages/                    # 保存的pages
 └── cookies/                  # 保存的cookies
 ```
 

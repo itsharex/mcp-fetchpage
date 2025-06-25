@@ -150,13 +150,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Create JSON content
             const jsonContent = JSON.stringify(cookieData, null, 2);
             
-            // Download file to fetch-with-cookie/cookies directory
+            // Download file to mcp-fetchpage/cookies directory
             const blob = new Blob([jsonContent], { type: 'application/json' });
             const downloadUrl = URL.createObjectURL(blob);
             
             await chrome.downloads.download({
                 url: downloadUrl,
-                filename: `fetch-with-cookie/cookies/${currentDomain.replace(/[^a-zA-Z0-9.-]/g, '_')}_cookies.json`,
+                filename: `mcp-fetchpage/cookies/${currentDomain.replace(/[^a-zA-Z0-9.-]/g, '_')}_cookies.json`,
                 saveAs: false
             });
             

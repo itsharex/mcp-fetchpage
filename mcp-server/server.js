@@ -11,10 +11,10 @@ import { URL } from 'url';
 import os from 'os';
 import puppeteer from 'puppeteer';
 
-// Cookie存储目录 - 统一使用Downloads下的fetch-with-cookie目录
-const COOKIE_DIR = path.join(os.homedir(), 'Downloads', 'fetch-with-cookie', 'cookies');
+// Cookie存储目录 - 统一使用Downloads下的mcp-fetchpage目录
+const COOKIE_DIR = path.join(os.homedir(), 'Downloads', 'mcp-fetchpage', 'cookies');
 // 页面内容存储目录
-const PAGES_DIR = path.join(os.homedir(), 'Downloads', 'fetch-with-cookie', 'pages');
+const PAGES_DIR = path.join(os.homedir(), 'Downloads', 'mcp-fetchpage', 'pages');
 
 // 加载域名选择器配置
 let domainSelectors = {};

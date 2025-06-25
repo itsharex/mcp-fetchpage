@@ -24,12 +24,12 @@ Intelligent web page fetching with automatic cookie support and CSS selector ext
 1. Go to `chrome://extensions/`
 2. Enable "Developer mode"
 3. Click "Load unpacked"
-4. Select `~/Downloads/fetch-with-cookie/chrome-extension`
+4. Select `~/Downloads/mcp-fetchpage/chrome-extension`
 
 ### 2. Install MCP Server
 
 ```bash
-cd ~/Downloads/fetch-with-cookie/mcp-server
+cd ~/Downloads/mcp-fetchpage/mcp-server
 npm install
 ```
 
@@ -44,7 +44,7 @@ npm install
   "mcpServers": {
     "mcp-fetchpage": {
       "command": "node",
-      "args": ["/Users/YOUR_USERNAME/Downloads/fetch-with-cookie/mcp-server/server.js"]
+      "args": ["/Users/YOUR_USERNAME/Downloads/mcp-fetchpage/mcp-server/server.js"]
     }
   }
 }
@@ -58,7 +58,7 @@ npm install
   "mcpServers": {
     "mcp-fetchpage": {
       "command": "node",
-      "args": ["~/Downloads/fetch-with-cookie/mcp-server/server.js"]
+      "args": ["~/Downloads/mcp-fetchpage/mcp-server/server.js"]
     }
   }
 }
@@ -70,7 +70,7 @@ Restart your editor after configuration.
 
 ### Basic Usage
 1. **Login** to a website in Chrome
-2. **Click** the "Fetch With Cookie" extension icon  
+2. **Click** the "Fetch Page MCP Tools" extension icon  
 3. **Click** "Save Cookies" button
 4. **Use** in Claude/Cursor: `fetchpage(url="https://example.com")`
 
@@ -123,7 +123,7 @@ npx @modelcontextprotocol/inspector
 ## File Structure
 
 ```
-~/Downloads/fetch-with-cookie/
+~/Downloads/mcp-fetchpage/
 ├── README.md                   # This file
 ├── README-zh.md               # Chinese version  
 ├── chrome-extension/          # Chrome extension
@@ -131,6 +131,7 @@ npx @modelcontextprotocol/inspector
 │   ├── server.js            # Main server
 │   ├── domain-selectors.json # Domain selector config
 │   └── package.json
+├── pages/                    # Saved pages
 └── cookies/                  # Saved cookies
 ```
 
