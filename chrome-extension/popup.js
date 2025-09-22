@@ -154,9 +154,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const blob = new Blob([jsonContent], { type: 'application/json' });
             const downloadUrl = URL.createObjectURL(blob);
             
+            // 先将期望的basename通知后台，确保最终文件名为 domain_cookies.json
+            const basename = `${currentDomain.replace(/[^a-zA-Z0-9.-]/g, '_')}_cookies.json`;
+            try {
+                await chrome.runtime.sendMessage({ type: 'mcp:setDownloadBasename', basename });
+            } catch (e) {
+                console.warn('Failed to hint basename:', e);
+            }
+
             await chrome.downloads.download({
                 url: downloadUrl,
-                filename: `mcp-fetchpage/cookies/${currentDomain.replace(/[^a-zA-Z0-9.-]/g, '_')}_cookies.json`,
+                filename: basename, // 后台会强制放入 mcp-fetchpage/cookies/
                 saveAs: false
             });
             
