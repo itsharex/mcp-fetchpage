@@ -303,6 +303,78 @@ class CookieManager {
     this.cookiesCache = {};
   }
 
+  // 列出所有cookie文件路径
+  listAllCookieFiles() {
+    if (!fs.existsSync(COOKIE_DIR)) {
+      return [];
+    }
+    const files = fs.readdirSync(COOKIE_DIR);
+    const result = [];
+    for (const file of files) {
+      // 仅匹配 *_cookies.json 及可能的重复命名 *_cookies (n).json
+      if (/_cookies(\s*\(\d+\))?\.json$/i.test(file)) {
+        result.push(path.join(COOKIE_DIR, file));
+      }
+    }
+    return result;
+  }
+
+  // 从所有文件加载并合并cookie和localStorage（仅分域名）
+  loadAndMergeAllCookies() {
+    const files = this.listAllCookieFiles();
+    if (files.length === 0) {
+      return null;
+    }
+
+    const merged = {
+      cookies: [],
+      localStorageByDomain: {}
+    };
+
+    const seenKeys = new Set(); // 用于cookie去重：name|domain|path
+
+    for (const filePath of files) {
+      try {
+        const data = this.loadCookiesFromFile(filePath);
+        if (!data) continue;
+        const filename = path.basename(filePath);
+        // 从文件名提取来源域名: <domain>_cookies.json 或 <domain>_cookies (n).json
+        let sourceDomain = null;
+        const m = filename.match(/^(.*?)_cookies(\s*\(\d+\))?\.json$/i);
+        if (m && m[1]) {
+          sourceDomain = m[1].replace(/^www\./, '');
+        }
+
+        // 合并cookies
+        const cookies = Array.isArray(data.cookies) ? data.cookies : [];
+        for (const c of cookies) {
+          if (!c || !c.name || !c.value || !c.domain) continue;
+          const pathVal = c.path || '/';
+          const key = `${c.name}|${c.domain}|${pathVal}`;
+          if (seenKeys.has(key)) continue;
+          seenKeys.add(key);
+          merged.cookies.push({ ...c, path: pathVal });
+        }
+
+        // 合并localStorage到对应域（后读覆盖先读）
+        if (data.localStorage && typeof data.localStorage === 'object' && sourceDomain) {
+          if (!merged.localStorageByDomain[sourceDomain]) {
+            merged.localStorageByDomain[sourceDomain] = {};
+          }
+          Object.assign(merged.localStorageByDomain[sourceDomain], data.localStorage);
+        }
+      } catch (err) {
+        // 忽略单个文件解析错误
+        continue;
+      }
+    }
+
+    if (merged.cookies.length === 0 && Object.keys(merged.localStorageByDomain).length === 0) {
+      return null;
+    }
+    return merged;
+  }
+
   findCookieFile(domain) {
     const cleanDomain = domain.replace('www.', '');
     
@@ -885,34 +957,22 @@ async function handleFetchSpaWithCookies(args, sendProgress = null, shouldSaveFi
         };
       }
     } else {
-      // 只加载最新的cookie文件（Chrome扩展已经包含了所有相关域名的cookies）
-      const cookieFile = cookieManager.findCookieFile(domain);
-      if (cookieFile) {
-        cookieData = cookieManager.loadCookiesFromFile(cookieFile);
-        if (cookieData) {
-          // 检查是否过期
-          if (cookieManager.isCookieExpired(cookieData)) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: `❌ Found cookie file for ${domain}, but some cookies have expired.\n\nPlease use the Chrome extension to get fresh cookies:\n1. Visit ${url} and login\n2. Use the Fetch With Cookie extension\n3. Try again`
-                }
-              ]
-            };
-          }
-          
-          if (sendProgress) await sendProgress(0, 1, '已读取Cookie');
-        } else {
+      // 新逻辑：合并所有cookie文件，解决短链/跨域跳转漏cookie问题
+      const merged = cookieManager.loadAndMergeAllCookies();
+      if (merged) {
+        // 如有过期信息，仍沿用原有过期检测逻辑（合并后粗略检查）
+        if (cookieManager.isCookieExpired(merged)) {
           return {
             content: [
               {
                 type: 'text',
-                text: `❌ Cannot read cookie file for ${domain}.\n\nPlease use the Chrome extension to get cookies.`
+                text: `❌ Found cookies, but some have expired.\n\nPlease use the Chrome extension to get fresh cookies:\n1. Visit ${url} and login\n2. Use the Fetch With Cookie extension\n3. Try again`
               }
             ]
           };
         }
+        cookieData = merged;
+        if (sendProgress) await sendProgress(0, 1, `已读取Cookie（合并 ${cookieData.cookies?.length || 0} 个）`);
       } else {
         cookieData = null;
         if (sendProgress) await sendProgress(0, 1, '无Cookie');
@@ -1009,47 +1069,69 @@ async function handleFetchSpaWithCookies(args, sendProgress = null, shouldSaveFi
       });
     });
     
-    // 使用正确的browser.setCookie API设置cookies
+    // 使用正确的browser.setCookie API设置cookies（带SameSite映射与健壮性）
     if (cookieData && cookieData.cookies && cookieData.cookies.length > 0) {
       try {
-        let successCount = 0;
-        let failCount = 0;
+        const mapSameSite = (val) => {
+          if (!val) return null;
+          const lower = String(val).toLowerCase();
+          if (lower === 'lax') return 'Lax';
+          if (lower === 'strict') return 'Strict';
+          if (lower === 'none' || lower === 'no_restriction') return 'None';
+          if (lower === 'unspecified' || lower === 'default') return null;
+          return null;
+        };
         
-        // 准备cookies数组
-        const cookiesToSet = cookieData.cookies.map(cookie => ({
-          name: cookie.name,
-          value: cookie.value,
-          domain: cookie.domain,
-          path: cookie.path || '/',
-          secure: cookie.secure || false,
-          httpOnly: cookie.httpOnly || false,
-          sameSite: cookie.sameSite || 'Lax',
-          ...(cookie.expirationDate && { expires: cookie.expirationDate })
-        }));
-        
-        // 使用BrowserContext.setCookie一次性设置所有cookies (Puppeteer 24正确方法)
         const context = page.browserContext();
-        await context.setCookie(...cookiesToSet);
-        successCount = cookiesToSet.length;
-        
+        const cookiesToSet = [];
+        for (const cookie of cookieData.cookies) {
+          if (!cookie || !cookie.name || !cookie.value || !cookie.domain) continue;
+          const entry = {
+            name: cookie.name,
+            value: cookie.value,
+            domain: cookie.domain,
+            path: cookie.path || '/',
+            secure: !!cookie.secure,
+            httpOnly: !!cookie.httpOnly
+          };
+          const mapped = mapSameSite(cookie.sameSite);
+          if (mapped) entry.sameSite = mapped;
+          if (cookie.expirationDate) entry.expires = cookie.expirationDate;
+          cookiesToSet.push(entry);
+        }
+        if (cookiesToSet.length > 0) {
+          await context.setCookie(...cookiesToSet);
+          if (sendProgress) await sendProgress(1, 1, `已设置 ${cookiesToSet.length} 个Cookie`);
+        }
       } catch (error) {
-        // 静默处理cookie设置错误
+        // 静默处理cookie设置错误（避免泄露敏感信息），但保留简要计数
       }
     } else {
     }
     
     // 在导航之前设置localStorage（如果有的话）
-    if (cookieData && cookieData.localStorage && Object.keys(cookieData.localStorage).length > 0) {
-      // 在新页面上设置初始化脚本
-      await page.evaluateOnNewDocument((localStorageData) => {
-        for (const [key, value] of Object.entries(localStorageData)) {
-          try {
-            window.localStorage.setItem(key, value);
-          } catch (error) {
-            // 静默处理localStorage设置错误
+    // 在导航之前设置localStorage（按域名作用域写入，避免污染其他域）
+    if (cookieData && cookieData.localStorageByDomain && Object.keys(cookieData.localStorageByDomain).length > 0) {
+      await page.evaluateOnNewDocument((byDomain) => {
+        try {
+          const host = (location.hostname || '').replace(/^www\./, '');
+          const candidates = [];
+          for (const domain of Object.keys(byDomain)) {
+            const d = String(domain).replace(/^www\./, '');
+            if (host === d || host.endsWith('.' + d)) {
+              candidates.push(d);
+            }
           }
+          for (const d of candidates) {
+            const bucket = byDomain[d] || {};
+            for (const [k, v] of Object.entries(bucket)) {
+              try { window.localStorage.setItem(k, v); } catch (e) {}
+            }
+          }
+        } catch (e) {
+          // 忽略localStorage错误
         }
-      }, cookieData.localStorage);
+      }, cookieData.localStorageByDomain);
     }
     
     // 发送进度通知：设置完成，开始导航

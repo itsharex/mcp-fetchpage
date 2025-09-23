@@ -1,6 +1,6 @@
 {
   "name": "mcp-fetchpage",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "MCP Server for intelligent web page fetching with automatic cookie support",
   "main": "mcp-server/server.js",
   "type": "module",
