@@ -1,0 +1,89 @@
+name: Build and Release Chrome Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get version from package.json
+        id: package-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Package Chrome Extension
+        run: |
+          cd chrome-extension
+          zip -r ../mcp-fetch-page-extension-v${{ steps.package-version.outputs.version }}.zip . -x "*.DS_Store" -x "__MACOSX/*"
+          cd ..
+          echo "✅ Extension packaged successfully"
+          ls -lh mcp-fetch-page-extension-v${{ steps.package-version.outputs.version }}.zip
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            mcp-fetch-page-extension-v${{ steps.package-version.outputs.version }}.zip
+          body: |
+            ## MCP Fetch Page v${{ steps.package-version.outputs.version }}
+
+            ### Chrome Extension
+
+            Download and install the Chrome extension to save cookies from authenticated sessions:
+
+            **Installation:**
+            1. Download `mcp-fetch-page-extension-v${{ steps.package-version.outputs.version }}.zip`
+            2. Unzip the file
+            3. Open Chrome and go to `chrome://extensions/`
+            4. Enable "Developer mode" (top right)
+            5. Click "Load unpacked" and select the unzipped folder
+
+            ### NPM Package
+
+            Install via npm:
+            ```bash
+            npx -y mcp-fetch-page@latest
+            ```
+
+            Or configure in Claude Desktop:
+            ```json
+            {
+              "mcpServers": {
+                "mcp-fetch-page": {
+                  "command": "npx",
+                  "args": ["-y", "mcp-fetch-page@latest"]
+                }
+              }
+            }
+            ```
+
+            ### What's New
+
+            See [CHANGELOG.md](https://github.com/kaiye/mcp-fetch-page/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Summary
+        run: |
+          echo "🎉 Release created successfully!"
+          echo "📦 Extension: mcp-fetch-page-extension-v${{ steps.package-version.outputs.version }}.zip"
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"

@@ -4,7 +4,7 @@
 - Root: `package.json`, `README.md`, `README-zh.md`.
 - Server: `mcp-server/` (entry `server.js`, tools `debug.js`, config `domain-selectors.json`).
 - Chrome Extension: `chrome-extension/` (`manifest.json`, `popup.js`, `background.js`).
-- No committed cookies/pages; runtime data is stored under `~/Downloads/mcp-fetchpage/`.
+- No committed cookies/pages; runtime data is stored under `~/Downloads/mcp-fetch-page/`.
 
 ## Build, Test, and Development Commands
 - Run MCP server locally: `node mcp-server/server.js` or `npm start`.
@@ -31,7 +31,7 @@
 - Link related issues. Keep diffs focused; separate refactors from functional changes.
 
 ## Security & Configuration Tips
-- Cookies are stored at `~/Downloads/mcp-fetchpage/cookies`; pages at `~/Downloads/mcp-fetchpage/pages` (do not commit user data).
+- Cookies are stored at `~/Downloads/mcp-fetch-page/cookies`; pages at `~/Downloads/mcp-fetch-page/pages` (do not commit user data).
 - Prefer headless mode unless debugging (`headless: true` by default). Avoid logging sensitive headers/cookies.
 - Add new domain selectors in `domain-selectors.json`; scope them to the minimal CSS required.
 

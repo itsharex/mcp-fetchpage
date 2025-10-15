@@ -1,92 +1,46 @@
-# MCP FetchPage
+# MCP Fetch Page
 
-智能网页抓取工具，支持自动Cookie管理和CSS选择器内容提取。
-
-## 功能说明
-
-- **Chrome扩展**: 保存已登录网站的cookies
-- **MCP服务器**: 智能页面抓取，HTTP → SPA回退机制，支持CSS选择器
+基于浏览器的网页抓取工具，支持自动Cookie管理和CSS选择器内容提取。
 
 ## 核心特性
 
-- 🤖 **智能抓取**: 自动选择HTTP或浏览器方法
-- 🍪 **智能Cookie管理**: 使用Cookie实际过期时间，而非固定24小时限制
-- 🎯 **高级CSS选择器支持**: 处理多个节点，自动过滤嵌套元素
-- 🌐 **域名预设**: 内置常见网站的最佳选择器（微信、知识星球等）
-- 📱 **SPA支持**: 完整JavaScript渲染支持
-- 📄 **进度通知**: 实时状态更新
-- 🛠️ **双重调试工具**: 支持独立脚本和MCP Inspector
+- 🤖 **浏览器自动化**: 使用Puppeteer完整JavaScript渲染
+- 🍪 **自动Cookie管理**: 自动加载所有已保存的Cookie
+- 🎯 **CSS选择器支持**: 使用选择器提取特定内容
+- 🌐 **域名预设**: 内置常见网站选择器
+- 📱 **SPA支持**: 完整支持动态内容和AJAX
 
-## 安装配置
+## 快速开始
 
-### 1. 安装MCP服务器
+### 1. 配置 MCP 服务器
 
-**方案A: 通过npm安装（推荐）**
-```bash
-npm install -g mcp-fetchpage
-```
+在 Claude Desktop 配置文件中添加 (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
-**方案B: 从源码安装**
-```bash
-cd ~/Downloads/mcp-fetchpage
-npm install
-```
-
-### 2. 安装Chrome扩展
-
-**如果通过npm安装:**
-1. 打开 `chrome://extensions/`
-2. 开启"开发者模式"
-3. 点击"加载已解压的扩展程序"
-4. 选择 `/usr/local/lib/node_modules/mcp-fetchpage/chrome-extension`
-
-**如果从源码安装:**
-1. 打开 `chrome://extensions/`
-2. 开启"开发者模式"
-3. 点击"加载已解压的扩展程序"
-4. 选择 `~/Downloads/mcp-fetchpage/chrome-extension`
-
-### 3. 配置编辑器
-
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-
-**如果通过npm全局安装:**
 ```json
 {
   "mcpServers": {
-    "mcp-fetchpage": {
-      "command": "node",
-      "args": ["/usr/local/lib/node_modules/mcp-fetchpage/mcp-server/server.js"]
+    "mcp-fetch-page": {
+      "command": "npx",
+      "args": ["-y", "mcp-fetch-page@latest"]
     }
   }
 }
 ```
 
-**如果本地安装或从源码安装:**
-```json
-{
-  "mcpServers": {
-    "mcp-fetchpage": {
-      "command": "node",
-      "args": ["/path/to/mcp-fetchpage/mcp-server/server.js"]
-    }
-  }
-}
-```
+重启 Claude Desktop。
 
-**Cursor** (Settings > Cursor Settings > Tools & Integrations > MCP Tools):
-```json
-{
-  "mcpServers": {
-    "mcp-fetchpage": {
-      "command": "node",
-      "args": ["node_modules/mcp-fetchpage/mcp-server/server.js"]
-    }
-  }
-}
-```
+### 2. 安装 Chrome 扩展（可选 - 用于需要登录的页面）
 
-配置完成后重启编辑器。
+下载并安装 Chrome 扩展以保存已登录网站的 cookies：
+
+**[📥 从 Releases 下载扩展](https://github.com/kaiye/mcp-fetch-page/releases/latest)**
+
+安装步骤：
+1. 从最新版本下载 `mcp-fetch-page-extension-vX.X.X.zip`
+2. 解压文件
+3. 打开 Chrome 并访问 `chrome://extensions/`
+4. 开启"开发者模式"（右上角）
+5. 点击"加载已解压的扩展程序"并选择解压后的文件夹
 
 ## 使用方法
 
@@ -99,17 +53,17 @@ npm install
 ### 高级用法
 
 ```javascript
-// 基础智能抓取
+// 基础抓取，自动加载Cookie
 fetchpage(url="https://example.com")
-
-// 强制指定方法
-fetchpage(url="https://example.com", forceMethod="spa")
 
 // 使用CSS选择器提取特定内容
 fetchpage(url="https://example.com", waitFor="#main-content")
 
 // 微信公众号文章（自动选择器）
 fetchpage(url="https://mp.weixin.qq.com/s/xxxxx")
+
+// 非无头模式运行（用于调试）
+fetchpage(url="https://example.com", headless=false)
 ```
 
 ### 域名预设
@@ -137,15 +91,13 @@ npx @modelcontextprotocol/inspector
 
 - `url` (必需): 要抓取的URL
 - `waitFor` (可选): CSS选择器，提取特定内容
-- `forceMethod` (可选): 强制使用 "http" 或 "spa" 方法
-- `skipCookies` (可选): 跳过加载cookies
 - `headless` (可选): 浏览器无头模式 (默认: true)
 - `timeout` (可选): 超时时间毫秒 (默认: 30000)
 
 ## 文件结构
 
 ```
-mcp-fetchpage/
+mcp-fetch-page/
 ├── package.json              # npm包配置
 ├── package-lock.json         # npm锁定文件
 ├── node_modules/             # npm依赖

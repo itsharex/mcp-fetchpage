@@ -76,7 +76,7 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
     const baseName = safeHint || rawName || 'cookies.json';
 
     // 强制保存到子目录
-    const targetPath = `mcp-fetchpage/cookies/${baseName}`;
+    const targetPath = `mcp-fetch-page/cookies/${baseName}`;
     suggest({ filename: targetPath, conflictAction: 'overwrite' });
   } catch (e) {
     // 忽略错误，保持默认行为

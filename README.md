@@ -1,92 +1,46 @@
-# MCP FetchPage
+# MCP Fetch Page
 
-Intelligent web page fetching with automatic cookie support and CSS selector extraction.
-
-## What it does
-
-- **Chrome Extension**: Save cookies from logged-in websites
-- **MCP Server**: Intelligent page fetching with HTTP → SPA fallback and CSS selector support
+Browser-based web page fetching with automatic cookie support and CSS selector extraction.
 
 ## Features
 
-- 🤖 **Intelligent Fetching**: Automatically chooses HTTP or browser method
-- 🍪 **Smart Cookie Management**: Uses actual cookie expiration times, not fixed 24-hour limit  
-- 🎯 **Advanced CSS Selector Support**: Handles multiple nodes, filters nested elements automatically
-- 🌐 **Domain Presets**: Built-in selectors for common websites (WeChat, Knowledge Planet, etc.)
-- 📱 **SPA Support**: Full JavaScript rendering when needed
-- 📄 **Progress Notifications**: Real-time status updates
-- 🛠️ **Dual Debug Tools**: Both standalone script and MCP Inspector support
+- 🤖 **Browser Automation**: Full JavaScript rendering with Puppeteer
+- 🍪 **Automatic Cookie Management**: Loads all saved cookies automatically
+- 🎯 **CSS Selector Support**: Extract specific content with selectors
+- 🌐 **Domain Presets**: Built-in selectors for common websites
+- 📱 **SPA Support**: Fully supports dynamic content and AJAX
 
-## Setup
+## Quick Start
 
-### 1. Install MCP Server
+### 1. Configure MCP Server
 
-**Option A: Install from npm (Recommended)**
-```bash
-npm install -g mcp-fetchpage
-```
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
-**Option B: Install from source**
-```bash
-cd ~/Downloads/mcp-fetchpage
-npm install
-```
-
-### 2. Install Chrome Extension
-
-**If you installed from npm:**
-1. Go to `chrome://extensions/`
-2. Enable "Developer mode"
-3. Click "Load unpacked"
-4. Select `/usr/local/lib/node_modules/mcp-fetchpage/chrome-extension`
-
-**If you installed from source:**
-1. Go to `chrome://extensions/`
-2. Enable "Developer mode"
-3. Click "Load unpacked"
-4. Select `~/Downloads/mcp-fetchpage/chrome-extension`
-
-### 3. Configure Editor
-
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-
-**If installed globally via npm:**
 ```json
 {
   "mcpServers": {
-    "mcp-fetchpage": {
-      "command": "node",
-      "args": ["/usr/local/lib/node_modules/mcp-fetchpage/mcp-server/server.js"]
+    "mcp-fetch-page": {
+      "command": "npx",
+      "args": ["-y", "mcp-fetch-page@latest"]
     }
   }
 }
 ```
 
-**If installed locally or from source:**
-```json
-{
-  "mcpServers": {
-    "mcp-fetchpage": {
-      "command": "node",
-      "args": ["/path/to/mcp-fetchpage/mcp-server/server.js"]
-    }
-  }
-}
-```
+Restart Claude Desktop.
 
-**Cursor** (Settings > Cursor Settings > Tools & Integrations > MCP Tools):
-```json
-{
-  "mcpServers": {
-    "mcp-fetchpage": {
-      "command": "node",
-      "args": ["node_modules/mcp-fetchpage/mcp-server/server.js"]
-    }
-  }
-}
-```
+### 2. Install Chrome Extension (Optional - for authenticated pages)
 
-Restart your editor after configuration.
+Download and install the Chrome extension to save cookies from authenticated sessions:
+
+**[📥 Download Extension from Releases](https://github.com/kaiye/mcp-fetch-page/releases/latest)**
+
+Installation steps:
+1. Download `mcp-fetch-page-extension-vX.X.X.zip` from the latest release
+2. Unzip the file
+3. Open Chrome and go to `chrome://extensions/`
+4. Enable "Developer mode" (top right)
+5. Click "Load unpacked" and select the unzipped folder
 
 ## Usage
 
@@ -99,17 +53,17 @@ Restart your editor after configuration.
 ### Advanced Usage
 
 ```javascript
-// Basic intelligent fetching
+// Basic fetching with automatic cookie loading
 fetchpage(url="https://example.com")
-
-// Force specific method
-fetchpage(url="https://example.com", forceMethod="spa")
 
 // Extract specific content with CSS selector
 fetchpage(url="https://example.com", waitFor="#main-content")
 
 // WeChat articles (automatic selector)
 fetchpage(url="https://mp.weixin.qq.com/s/xxxxx")
+
+// Run in non-headless mode for debugging
+fetchpage(url="https://example.com", headless=false)
 ```
 
 ### Domain Presets
@@ -137,20 +91,18 @@ npx @modelcontextprotocol/inspector
 
 - `url` (required): The URL to fetch
 - `waitFor` (optional): CSS selector to extract specific content
-- `forceMethod` (optional): Force "http" or "spa" method
-- `skipCookies` (optional): Skip loading cookies
 - `headless` (optional): Run browser in headless mode (default: true)
 - `timeout` (optional): Timeout in milliseconds (default: 30000)
 
 ## File Structure
 
 ```
-mcp-fetchpage/
+mcp-fetch-page/
 ├── package.json              # npm package config
 ├── package-lock.json         # npm lockfile
 ├── node_modules/             # npm dependencies
 ├── README.md                 # This file
-├── README-zh.md              # Chinese version  
+├── README-zh.md              # Chinese version
 ├── CLAUDE.md                 # Claude Code usage guide
 ├── chrome-extension/         # Chrome extension
 │   ├── manifest.json

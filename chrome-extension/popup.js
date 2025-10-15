@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Create JSON content
             const jsonContent = JSON.stringify(cookieData, null, 2);
             
-            // Download file to mcp-fetchpage/cookies directory
+            // Download file to mcp-fetch-page/cookies directory
             const blob = new Blob([jsonContent], { type: 'application/json' });
             const downloadUrl = URL.createObjectURL(blob);
             
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             await chrome.downloads.download({
                 url: downloadUrl,
-                filename: basename, // 后台会强制放入 mcp-fetchpage/cookies/
+                filename: basename, // 后台会强制放入 mcp-fetch-page/cookies/
                 saveAs: false
             });
             

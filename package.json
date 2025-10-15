@@ -1,7 +1,7 @@
 {
-  "name": "mcp-fetchpage",
-  "version": "2.0.1",
-  "description": "MCP Server for intelligent web page fetching with automatic cookie support",
+  "name": "mcp-fetch-page",
+  "version": "0.1.0",
+  "description": "MCP Server for browser-based web page fetching with automatic cookie support",
   "main": "mcp-server/server.js",
   "type": "module",
   "scripts": {
@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kaiye/mcp-fetchpage.git"
+    "url": "git+https://github.com/kaiye/mcp-fetch-page.git"
   },
-  "homepage": "https://github.com/kaiye/mcp-fetchpage#readme",
+  "homepage": "https://github.com/kaiye/mcp-fetch-page#readme",
   "bugs": {
-    "url": "https://github.com/kaiye/mcp-fetchpage/issues"
+    "url": "https://github.com/kaiye/mcp-fetch-page/issues"
   },
   "keywords": [
     "mcp",
@@ -25,6 +25,9 @@
   ],
   "author": "kaiye",
   "license": "MIT",
+  "bin": {
+    "mcp-fetch-page": "mcp-server/server.js"
+  },
   "files": [
     "mcp-server/server.js",
     "mcp-server/debug.js",
