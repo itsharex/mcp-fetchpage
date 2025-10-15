@@ -14,6 +14,50 @@ const COOKIE_DIR = path.join(os.homedir(), 'Downloads', 'mcp-fetch-page', 'cooki
 // 页面内容存储目录
 const PAGES_DIR = path.join(os.homedir(), 'Downloads', 'mcp-fetch-page', 'pages');
 
+// 优先使用系统已安装的 Chrome，避免依赖 Puppeteer 管理的浏览器下载
+function resolveSystemChromePath() {
+  try {
+    const candidates = [];
+    const platform = process.platform;
+
+    if (platform === 'darwin') {
+      // 常见的 macOS 安装路径（稳定版 / Beta / Canary）
+      candidates.push(
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        '/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta',
+        '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary'
+      );
+    } else if (platform === 'win32') {
+      const programFiles = process.env['PROGRAMFILES'] || 'C\\\x3a\\Program Files';
+      const programFilesX86 = process.env['PROGRAMFILES(X86)'] || 'C\\\x3a\\Program Files (x86)';
+      const localAppData = process.env['LOCALAPPDATA'] || 'C\\\x3a\\Users\\%USERNAME%\\AppData\\Local';
+      candidates.push(
+        path.join(programFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+        path.join(programFilesX86, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+        path.join(localAppData, 'Google', 'Chrome', 'Application', 'chrome.exe')
+      );
+    } else {
+      // Linux 常见路径
+      candidates.push(
+        '/usr/bin/google-chrome-stable',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser',
+        '/snap/bin/chromium'
+      );
+    }
+
+    for (const p of candidates) {
+      try {
+        if (fs.existsSync(p)) return p;
+      } catch (_) {}
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
 // 加载域名选择器配置
 let domainSelectors = {};
 try {
@@ -25,6 +69,7 @@ try {
   // 如果配置文件不存在或读取失败，使用空配置
   domainSelectors = {};
 }
+
 
 // 根据URL获取对应的CSS选择器
 function getSelectorForDomain(url) {
@@ -309,7 +354,7 @@ function savePageContent(url, content, title, isError = false) {
 const server = new Server(
   {
     name: 'mcp-fetch-page',
-    version: '0.1.0',
+    version: '0.3.0',
   },
   {
     capabilities: {
@@ -384,26 +429,24 @@ async function handleFetchSpaWithCookies(args, sendProgress = null, shouldSaveFi
 
     // 自动合并所有cookie文件，解决短链/跨域跳转漏cookie问题
     const merged = cookieManager.loadAndMergeAllCookies();
+    // 收集需要在返回内容中提示给用户的信息（例如 cookie 过期提醒）
+    const advisoryNotes = [];
     if (merged) {
-      // 如有过期信息，仍沿用原有过期检测逻辑（合并后粗略检查）
-      if (cookieManager.isCookieExpired(merged)) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `❌ Found cookies, but some have expired.\n\nPlease use the Chrome extension to get fresh cookies:\n1. Visit ${url} and login\n2. Use the Fetch With Cookie extension\n3. Try again`
-            }
-          ]
-        };
-      }
+      const hasExpired = cookieManager.isCookieExpired(merged);
       cookieData = merged;
-      if (sendProgress) await sendProgress(0, 1, `已读取Cookie（合并 ${cookieData.cookies?.length || 0} 个）`);
+      if (sendProgress) await sendProgress(0, 1, `已读取Cookie（合并 ${cookieData.cookies?.length || 0} 个${hasExpired ? '，包含过期项' : ''}）`);
+      if (hasExpired) {
+        advisoryNotes.push(
+          '⚠️ 检测到部分 Cookie 可能已过期：如果内容需要登录但无法访问，建议使用 Chrome 扩展 “Fetch Page MCP Tools” 刷新本地登录信息后重试。',
+          `步骤：\n1) 打开并登录：${url}\n2) 通过扩展保存 cookies/localStorage\n3) 回到对话再次调用 mcp fetchpage`
+        );
+      }
     } else {
       cookieData = null;
       if (sendProgress) await sendProgress(0, 1, '无Cookie');
     }
     
-    // 启动Puppeteer浏览器，使用最完整的启动参数（解决cookie设置问题）
+    // 启动Puppeteer浏览器，使用系统 Chrome（避免下载受管浏览器）
     const launchOptions = {
       headless: headless,
       defaultViewport: null, // 允许浏览器使用默认视口
@@ -426,8 +469,16 @@ async function handleFetchSpaWithCookies(args, sendProgress = null, shouldSaveFi
       ]
     };
     
-    
-    
+    // 直接写死系统 Chrome 路径（若存在），否则尝试使用 channel: 'chrome'
+    const systemChrome = resolveSystemChromePath();
+    if (systemChrome) {
+      launchOptions.executablePath = systemChrome;
+    } else {
+      // 在 macOS/Windows 上，Puppeteer 可通过 channel 使用系统浏览器
+      // 若仍未找到，将回退到默认行为（可能报未安装受管浏览器的错误）
+      launchOptions.channel = 'chrome';
+    }
+
     browser = await puppeteer.launch(launchOptions);
     
     const page = await browser.newPage();
@@ -902,7 +953,10 @@ async function handleFetchSpaWithCookies(args, sendProgress = null, shouldSaveFi
     const compressedBodyText = cleanContent.bodyText.replace(/\n{3,}/g, '\n\n');
     
     // 保存Markdown格式内容到文件
-    const textContent = `Title: ${cleanContent.title}\n\n${compressedBodyText}`;
+    let textContent = `Title: ${cleanContent.title}\n\n${compressedBodyText}`;
+    if (advisoryNotes && advisoryNotes.length > 0) {
+      textContent += `\n\n---\nNotes:\n${advisoryNotes.join('\n')}`;
+    }
     if (shouldSaveFile) {
       const savedFilePath = savePageContent(url, textContent, cleanContent.title);
     }
@@ -952,7 +1006,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extras = {}) => 
   };
 
   if (toolName === 'fetchpage') {
-    return await handleFetchSpaWithCookies(request.params.arguments, sendProgress);
+    try {
+      return await handleFetchSpaWithCookies(request.params.arguments, sendProgress);
+    } catch (error) {
+      const args = request.params.arguments || {};
+      const url = args.url || '';
+      const friendly = [
+        '❌ Fetch failed in browser mode.',
+        error && error.message ? `Reason: ${error.message}` : null,
+        '',
+        '建议：使用 Chrome 扩展 “Fetch Page MCP Tools” 写入本地登录信息后重试。',
+        '步骤：',
+        `1) 打开并登录：${url || '目标网站'}`,
+        '2) 点击扩展保存 cookies/localStorage',
+        '3) 回到对话中再次调用 mcp fetchpage',
+      ].filter(Boolean).join('\n');
+
+      // 保存错误内容，便于排查
+      try { savePageContent(url || 'about:blank', friendly, 'Fetch Error', true); } catch (_) {}
+
+      return {
+        content: [
+          { type: 'text', text: friendly }
+        ]
+      };
+    }
   } else {
     throw new Error(`Unknown tool: ${toolName}`);
   }

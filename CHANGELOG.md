@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2025-01-XX
+## [0.3.0] - 2025-10-15
+
+### Added
+- GitHub Actions workflow for automatic release packaging on tag push
+- Automated Chrome extension ZIP creation and GitHub Release creation
+- Comprehensive release documentation with automated workflow instructions
+
+### Changed
+- Unified version numbering to 0.3.0 across all components
+- Enhanced RELEASE.md with automated and manual release procedures
+
+## [0.1.0] - 2025-10-15
 
 ### Added
 - Initial release with SPA-only architecture
