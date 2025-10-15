@@ -354,7 +354,7 @@ function savePageContent(url, content, title, isError = false) {
 const server = new Server(
   {
     name: 'mcp-fetch-page',
-    version: '0.3.0',
+    version: '0.3.1',
   },
   {
     capabilities: {
