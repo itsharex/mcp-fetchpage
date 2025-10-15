@@ -299,8 +299,8 @@ class CookieManager {
       
       // 如果有设置过期时间的Cookie，并且其中有些已过期，则返回过期信息
       if (hasExpiredCookies && totalWithExpiration > 0) {
-        console.log(`⚠️  检测到 ${expiredCount}/${totalWithExpiration} 个Cookie已过期:`);
-        console.log(`   过期Cookie: ${expiredCookieNames.join(', ')}`);
+        console.error(`⚠️  检测到 ${expiredCount}/${totalWithExpiration} 个Cookie已过期:`);
+        console.error(`   过期Cookie: ${expiredCookieNames.join(', ')}`);
         return true;
       }
       
